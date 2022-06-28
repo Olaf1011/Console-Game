@@ -16,7 +16,7 @@ struct {
 static constexpr char gsk_emptySpace = ' ';
 static constexpr char gsk_wall = 'w';
 
-static constexpr int gsk_widthGame	= 29;
+static constexpr int gsk_widthGame	= 100;
 static constexpr int gsk_heightGame = 20;
 
 static char gs_game[gsk_heightGame][gsk_widthGame];
