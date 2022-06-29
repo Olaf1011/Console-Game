@@ -16,7 +16,7 @@ struct Character{
 	}dir;
 };
 
-static Character gs_player{ 's' };
+static Character gs_player{ 'p' };
 static constexpr char gsk_emptySpace = ' ';
 static constexpr char gsk_wall = 'w';
 
@@ -26,8 +26,10 @@ static constexpr int gsk_heightGame = 21;
 static char gs_game[gsk_heightGame][gsk_widthGame];
 static char gs_gameLine[gsk_heightGame * gsk_widthGame];
 static bool gs_isDirty = true;
-static double gs_timer = 0.0f;
-static int gs_counter = 1;
+static double gs_timer = 0.0;
+
+static double gs_timerMax = 256.0;
+
 static constexpr int gsk_sizeInput = 30;
 static char* gsp_inputLine = new char[gsk_sizeInput];
 using namespace std;
@@ -110,13 +112,12 @@ void Controlls()
 void Update(const double deltaTime)
 {
 	gs_timer += deltaTime;
-	if (gs_timer > 256.0 || gs_isDirty)
+	if (gs_timer > gs_timerMax || gs_isDirty)
 	{
 		//s_box[g_ball.x][g_ball.y] = s_emptySpace; //Clean previous position
 
 		Controlls();
 		Collision();
-
 
 		gs_player.x += gs_player.dir.x;
 		gs_player.y += gs_player.dir.y;
@@ -143,31 +144,40 @@ void CreateField()
 	}
 }
 
-void WallHit()
-{
-	cout << "You hit a wall...";
-}
 
 void HitCommand(const string& command)
 {
 	int xMod(0), yMod(0);
-	if (command == "north")
-	{
+	if (command == ("north"))
 		yMod = -1;
-	}
-	else if (command == "south")
+	else if (command == ("south"))
 		yMod = 1;
-	else if (command == "west")
+	else if (command == ("west"))
 		xMod = -1;
-	else if (command == "east")
+	else if (command ==("east"))
 		xMod = 1;
 
 	const char object = gs_game[gs_player.y  + yMod][gs_player.x + xMod];
 	if (object != gsk_emptySpace)
 	{
 		if (object == gsk_wall)
-			WallHit();
+			cout << "You hit a wall...\n";
 	}
+}
+
+void SpeedUp(const string& command)
+{
+	if(command == "nobrake")
+		gs_timerMax = 1.0;
+	else if (command == ("super"))
+		gs_timerMax = 64.0;
+	else if (command ==("fast"))
+		gs_timerMax = 128.0;
+	else if (command ==("normal"))
+		gs_timerMax = 256.0;
+	else if (command == ("slow"))
+		gs_timerMax = 512.0;
+	cout << gs_timerMax << endl;
 }
 
 int main()
@@ -195,16 +205,15 @@ int main()
 		timer.start();
 		Update(time);
 		Sleep(1);
-
 		if (gs_isDirty)
 		{
 			Clear();
 			gs_game[gs_player.y][gs_player.x] = gs_player.character;
 
 			PrintBox();
-			Sleep(3);
 			gs_isDirty = false;
 		}
+
 		timer.stop();
 		time = timer.elapsedMilliseconds();
 
@@ -215,21 +224,18 @@ int main()
 			cin.getline(gsp_inputLine, gsk_sizeInput);
 
 			int counter = 0;
-
-			while (counter != gsk_sizeInput)
+			int index = 0;
+			while (counter != gsk_sizeInput && gsp_inputLine[counter] != '\0')
 			{
-				if (gsp_inputLine[counter] == ' ' || gsp_inputLine[counter] == '\0')
-					break;
-
-				input[0] += gsp_inputLine[counter];
+				if(gsp_inputLine[counter] == ' ')
+				{
+					++index;
+					++counter;
+				}
+				input[index] += gsp_inputLine[counter];
 				++counter;
 			}
 
-			while(gsp_inputLine[counter] != '\0')
-			{
-				++counter;
-				input[1] += gsp_inputLine[counter];
-			}
 
 			ranges::for_each(input[0], [](char& c) {c = tolower(c); });
 			ranges::for_each(input[1], [](char& c) {c = tolower(c); });
@@ -239,6 +245,10 @@ int main()
 
 			else if (input[0] == "hit")
 				HitCommand(input[1]);
+			else if (input[0] == "speed")
+				SpeedUp(input[1]);
+			else if (input[0] == "clear")
+				CreateField();
 
 			system("pause");
 
