@@ -108,12 +108,12 @@ void Update(const double deltaTime)
 	gs_timer += deltaTime;
 	if (gs_timer > 256.0 || gs_isDirty)
 	{
-		//s_box[g_ball.x][g_ball.y] = s_emptySpace;
+		//s_box[g_ball.x][g_ball.y] = s_emptySpace; //Clean previous position
 
 		//Controlls();
 
 
-		g_ball.y = -int(cos(TO_RAD(gs_counter * 10.f)) * 10.f);
+		g_ball.y = -int(sin(TO_RAD(gs_counter * 10.f)) * 10.f);
 		g_ball.x = gs_counter++;
 		Collision();
 
@@ -129,16 +129,8 @@ void Update(const double deltaTime)
 	}
 }
 
-int main()
+void CreateField()
 {
-	Timer timer;
-	std::srand(std::time(nullptr));
-
-	//g_ball.x = RandomPosX();
-	//g_ball.y = RandomPosY();
-	//g_ball.x = 1;
-	//g_ball.y = gsk_heightGame / 2;
-
 	for (int i = 0; i < gsk_heightGame; ++i)
 	{
 		for (int j = 0; j < gsk_widthGame; ++j)
@@ -151,6 +143,19 @@ int main()
 				gs_game[i][j] = gsk_emptySpace;
 		}
 	}
+}
+
+int main()
+{
+	Timer timer;
+	std::srand(std::time(nullptr));
+
+	//g_ball.x = RandomPosX();
+	//g_ball.y = RandomPosY();
+	//g_ball.x = 1;
+	//g_ball.y = gsk_heightGame / 2;
+
+	CreateField();
 
 	//for (int i = 20; i != 0; --i)
 	//{
@@ -178,12 +183,12 @@ int main()
 		timer.stop();
 		time = timer.elapsedMilliseconds();
 
-		if (GetAsyncKeyState(VK_CONTROL))
+		if (GetAsyncKeyState(0xC0)) // 0xC0 '`~'
 		{
 			std::string input;
 			cout << "Input: ";
 			cin >> input;
-			cout << "Okay.";
+			cout << "Okay";
 		}
 	}
 
