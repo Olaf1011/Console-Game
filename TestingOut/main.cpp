@@ -1,22 +1,22 @@
 #include <iostream>
 #include <ctime>
 #include <windows.h>
+#include <algorithm>
 
 #include "Timer.hpp"
 
 #define TO_RAD(x) x * 3.14159 / 180
 
 struct Character{
-	Character(char c) : character(c) {};
+	Character(char c) : character(c), x(1), y(1) {};
 	const char character;
 	int x, y;
 	struct {
-		int x, y;
+		int x = 0, y = 0;
 	}dir;
 };
 
-static Character gs_ball{ 's' };
-static Character gs_cos{ 'c' };
+static Character gs_player{ 's' };
 static constexpr char gsk_emptySpace = ' ';
 static constexpr char gsk_wall = 'w';
 
@@ -28,6 +28,8 @@ static char gs_gameLine[gsk_heightGame * gsk_widthGame];
 static bool gs_isDirty = true;
 static double gs_timer = 0.0f;
 static int gs_counter = 1;
+static constexpr int gsk_sizeInput = 30;
+static char* gsp_inputLine = new char[gsk_sizeInput];
 using namespace std;
 
 
@@ -63,18 +65,18 @@ void Clear()
 
 void Collision()
 {
-	const int pos_x = gs_ball.x + gs_ball.dir.x;
-	const int pos_y = gs_ball.y + gs_ball.dir.y;
+	const int pos_x = gs_player.x + gs_player.dir.x;
+	const int pos_y = gs_player.y + gs_player.dir.y;
 
 	bool changed = false;
 	if (pos_x > gsk_widthGame || pos_x < 0)
 	{ 
-		gs_ball.dir.x = 0;
+		gs_player.dir.x = 0;
 		changed = true;
 	}
 	if (pos_y > gsk_heightGame || pos_y < 0)
 	{
-		gs_ball.dir.y = 0;
+		gs_player.dir.y = 0;
 		changed = true;
 	}
 
@@ -82,28 +84,27 @@ void Collision()
 	{
 		if (gs_game[pos_y][pos_x] != gsk_emptySpace)
 		{
-				gs_ball.dir.x = 0;
-				gs_ball.dir.y = 0;
+				gs_player.dir.x = 0;
+				gs_player.dir.y = 0;
 		}
 	}
-
 }
 
 void Controlls()
 {
 	if (GetAsyncKeyState(VK_UP))
-		gs_ball.dir.y = -1;
+		gs_player.dir.y = -1;
 	else if (GetAsyncKeyState(VK_DOWN))
-		gs_ball.dir.y = 1;
+		gs_player.dir.y = 1;
 	else
-		gs_ball.dir.y = 0;
+		gs_player.dir.y = 0;
 
 	if (GetAsyncKeyState(VK_RIGHT))
-		gs_ball.dir.x = 1;
+		gs_player.dir.x = 1;
 	else if (GetAsyncKeyState(VK_LEFT))
-		gs_ball.dir.x = -1;
+		gs_player.dir.x = -1;
 	else
-		gs_ball.dir.x = 0;
+		gs_player.dir.x = 0;
 }
 
 void Update(const double deltaTime)
@@ -113,24 +114,15 @@ void Update(const double deltaTime)
 	{
 		//s_box[g_ball.x][g_ball.y] = s_emptySpace; //Clean previous position
 
-		//Controlls();
-
-		gs_cos.y = -int(cos(TO_RAD(gs_counter * 10.f)) * 10.f);
-		gs_cos.x = gs_counter;
-
-		gs_ball.y = -int(sin(TO_RAD(gs_counter * 10.f)) * 10.f);
-		gs_ball.x = gs_counter++;
+		Controlls();
 		Collision();
 
-		gs_ball.y += gsk_heightGame / 2;
-		gs_cos.y += gsk_heightGame / 2;
 
-		//g_ball.x += g_ball.dir.x;
-		//g_ball.y += g_ball.dir.y;
+		gs_player.x += gs_player.dir.x;
+		gs_player.y += gs_player.dir.y;
 
 		gs_timer = 0.0;
-		//if(g_ball.dir.x != 0 || g_ball.dir.y != 0)
-		if(gs_ball.x < gsk_widthGame - 2)
+		if(gs_player.dir.x != 0 || gs_player.dir.y != 0)
 			gs_isDirty = true;
 	}
 }
@@ -151,13 +143,40 @@ void CreateField()
 	}
 }
 
+void WallHit()
+{
+	cout << "You hit a wall...";
+}
+
+void HitCommand(const string& command)
+{
+	int xMod(0), yMod(0);
+	if (command == "north")
+	{
+		yMod = -1;
+	}
+	else if (command == "south")
+		yMod = 1;
+	else if (command == "west")
+		xMod = -1;
+	else if (command == "east")
+		xMod = 1;
+
+	const char object = gs_game[gs_player.y  + yMod][gs_player.x + xMod];
+	if (object != gsk_emptySpace)
+	{
+		if (object == gsk_wall)
+			WallHit();
+	}
+}
+
 int main()
 {
 	Timer timer;
 	std::srand(std::time(nullptr));
 
-	//g_ball.x = RandomPosX();
-	//g_ball.y = RandomPosY();
+	gs_player.x = RandomPosX();
+	gs_player.y = RandomPosY();
 	//g_ball.x = 1;
 	//g_ball.y = gsk_heightGame / 2;
 
@@ -180,8 +199,7 @@ int main()
 		if (gs_isDirty)
 		{
 			Clear();
-			gs_game[gs_ball.y][gs_ball.x] = gs_ball.character;
-			gs_game[gs_cos.y][gs_cos.x] = gs_cos.character;
+			gs_game[gs_player.y][gs_player.x] = gs_player.character;
 
 			PrintBox();
 			Sleep(3);
@@ -192,10 +210,39 @@ int main()
 
 		if (GetAsyncKeyState(0xC0)) // 0xC0 '`~'
 		{
-			std::string input;
+			std::string input[2];
 			cout << "Input: ";
-			cin >> input;
-			cout << "Okay";
+			cin.getline(gsp_inputLine, gsk_sizeInput);
+
+			int counter = 0;
+
+			while (counter != gsk_sizeInput)
+			{
+				if (gsp_inputLine[counter] == ' ' || gsp_inputLine[counter] == '\0')
+					break;
+
+				input[0] += gsp_inputLine[counter];
+				++counter;
+			}
+
+			while(gsp_inputLine[counter] != '\0')
+			{
+				++counter;
+				input[1] += gsp_inputLine[counter];
+			}
+
+			ranges::for_each(input[0], [](char& c) {c = tolower(c); });
+			ranges::for_each(input[1], [](char& c) {c = tolower(c); });
+
+			if (input[0] == "quit")
+				break;
+
+			else if (input[0] == "hit")
+				HitCommand(input[1]);
+
+			system("pause");
+
+			gs_isDirty = true;
 		}
 	}
 
