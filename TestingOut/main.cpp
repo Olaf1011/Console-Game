@@ -4,6 +4,7 @@
 
 #include "Timer.hpp"
 
+#define TO_RAD(x) x * 3.14159 / 180
 
 struct {
 	int x, y;
@@ -16,14 +17,14 @@ struct {
 static constexpr char gsk_emptySpace = ' ';
 static constexpr char gsk_wall = 'w';
 
-static constexpr int gsk_widthGame	= 100;
-static constexpr int gsk_heightGame = 20;
+static constexpr int gsk_widthGame	= 163;
+static constexpr int gsk_heightGame = 21;
 
 static char gs_game[gsk_heightGame][gsk_widthGame];
 static char gs_gameLine[gsk_heightGame * gsk_widthGame];
 static bool gs_isDirty = true;
 static double gs_timer = 0.0f;
-
+static int gs_counter = 1;
 using namespace std;
 
 
@@ -85,34 +86,45 @@ void Collision()
 
 }
 
+void Controlls()
+{
+	if (GetAsyncKeyState(VK_UP))
+		g_ball.dir.y = -1;
+	else if (GetAsyncKeyState(VK_DOWN))
+		g_ball.dir.y = 1;
+	else
+		g_ball.dir.y = 0;
+
+	if (GetAsyncKeyState(VK_RIGHT))
+		g_ball.dir.x = 1;
+	else if (GetAsyncKeyState(VK_LEFT))
+		g_ball.dir.x = -1;
+	else
+		g_ball.dir.x = 0;
+}
+
 void Update(const double deltaTime)
 {
 	gs_timer += deltaTime;
-	if (gs_timer > 256.0)
+	if (gs_timer > 256.0 || gs_isDirty)
 	{
 		//s_box[g_ball.x][g_ball.y] = s_emptySpace;
-	
-		if (GetAsyncKeyState(VK_UP))
-			g_ball.dir.y = -1;
-		else if (GetAsyncKeyState(VK_DOWN))
-			g_ball.dir.y = 1;
-		else
-			g_ball.dir.y = 0;
 
-		if (GetAsyncKeyState(VK_RIGHT))
-			g_ball.dir.x = 1;
-		else if (GetAsyncKeyState(VK_LEFT))
-			g_ball.dir.x = -1;
-		else
-			g_ball.dir.x = 0;
+		//Controlls();
 
+
+		g_ball.y = -int(cos(TO_RAD(gs_counter * 10.f)) * 10.f);
+		g_ball.x = gs_counter++;
 		Collision();
 
-		g_ball.x += g_ball.dir.x;
-		g_ball.y += g_ball.dir.y;
+		g_ball.y += gsk_heightGame / 2;
+
+		//g_ball.x += g_ball.dir.x;
+		//g_ball.y += g_ball.dir.y;
 
 		gs_timer = 0.0;
-		if(g_ball.dir.x != 0 || g_ball.dir.y != 0)
+		//if(g_ball.dir.x != 0 || g_ball.dir.y != 0)
+		if(g_ball.x < gsk_widthGame - 2)
 			gs_isDirty = true;
 	}
 }
@@ -122,8 +134,10 @@ int main()
 	Timer timer;
 	std::srand(std::time(nullptr));
 
-	g_ball.x = RandomPosX();
-	g_ball.y = RandomPosY();
+	//g_ball.x = RandomPosX();
+	//g_ball.y = RandomPosY();
+	//g_ball.x = 1;
+	//g_ball.y = gsk_heightGame / 2;
 
 	for (int i = 0; i < gsk_heightGame; ++i)
 	{
@@ -138,10 +152,10 @@ int main()
 		}
 	}
 
-	for (int i = 20; i != 0; --i)
-	{
-		gs_game[RandomPosY()][RandomPosX()] = gsk_wall;
-	}
+	//for (int i = 20; i != 0; --i)
+	//{
+	//	gs_game[RandomPosY()][RandomPosX()] = gsk_wall;
+	//}
 
 	timer.start();
 	double time = 0.0;
@@ -163,6 +177,14 @@ int main()
 		}
 		timer.stop();
 		time = timer.elapsedMilliseconds();
+
+		if (GetAsyncKeyState(VK_CONTROL))
+		{
+			std::string input;
+			cout << "Input: ";
+			cin >> input;
+			cout << "Okay.";
+		}
 	}
 
 	return 0;
