@@ -6,14 +6,17 @@
 
 #define TO_RAD(x) x * 3.14159 / 180
 
-struct {
+struct Character{
+	Character(char c) : character(c) {};
+	const char character;
 	int x, y;
 	struct {
 		int x, y;
 	}dir;
-}g_ball;
+};
 
-
+static Character gs_ball{ 's' };
+static Character gs_cos{ 'c' };
 static constexpr char gsk_emptySpace = ' ';
 static constexpr char gsk_wall = 'w';
 
@@ -60,18 +63,18 @@ void Clear()
 
 void Collision()
 {
-	const int pos_x = g_ball.x + g_ball.dir.x;
-	const int pos_y = g_ball.y + g_ball.dir.y;
+	const int pos_x = gs_ball.x + gs_ball.dir.x;
+	const int pos_y = gs_ball.y + gs_ball.dir.y;
 
 	bool changed = false;
 	if (pos_x > gsk_widthGame || pos_x < 0)
 	{ 
-		g_ball.dir.x = 0;
+		gs_ball.dir.x = 0;
 		changed = true;
 	}
 	if (pos_y > gsk_heightGame || pos_y < 0)
 	{
-		g_ball.dir.y = 0;
+		gs_ball.dir.y = 0;
 		changed = true;
 	}
 
@@ -79,8 +82,8 @@ void Collision()
 	{
 		if (gs_game[pos_y][pos_x] != gsk_emptySpace)
 		{
-				g_ball.dir.x = 0;
-				g_ball.dir.y = 0;
+				gs_ball.dir.x = 0;
+				gs_ball.dir.y = 0;
 		}
 	}
 
@@ -89,18 +92,18 @@ void Collision()
 void Controlls()
 {
 	if (GetAsyncKeyState(VK_UP))
-		g_ball.dir.y = -1;
+		gs_ball.dir.y = -1;
 	else if (GetAsyncKeyState(VK_DOWN))
-		g_ball.dir.y = 1;
+		gs_ball.dir.y = 1;
 	else
-		g_ball.dir.y = 0;
+		gs_ball.dir.y = 0;
 
 	if (GetAsyncKeyState(VK_RIGHT))
-		g_ball.dir.x = 1;
+		gs_ball.dir.x = 1;
 	else if (GetAsyncKeyState(VK_LEFT))
-		g_ball.dir.x = -1;
+		gs_ball.dir.x = -1;
 	else
-		g_ball.dir.x = 0;
+		gs_ball.dir.x = 0;
 }
 
 void Update(const double deltaTime)
@@ -112,19 +115,22 @@ void Update(const double deltaTime)
 
 		//Controlls();
 
+		gs_cos.y = -int(cos(TO_RAD(gs_counter * 10.f)) * 10.f);
+		gs_cos.x = gs_counter;
 
-		g_ball.y = -int(sin(TO_RAD(gs_counter * 10.f)) * 10.f);
-		g_ball.x = gs_counter++;
+		gs_ball.y = -int(sin(TO_RAD(gs_counter * 10.f)) * 10.f);
+		gs_ball.x = gs_counter++;
 		Collision();
 
-		g_ball.y += gsk_heightGame / 2;
+		gs_ball.y += gsk_heightGame / 2;
+		gs_cos.y += gsk_heightGame / 2;
 
 		//g_ball.x += g_ball.dir.x;
 		//g_ball.y += g_ball.dir.y;
 
 		gs_timer = 0.0;
 		//if(g_ball.dir.x != 0 || g_ball.dir.y != 0)
-		if(g_ball.x < gsk_widthGame - 2)
+		if(gs_ball.x < gsk_widthGame - 2)
 			gs_isDirty = true;
 	}
 }
@@ -174,7 +180,8 @@ int main()
 		if (gs_isDirty)
 		{
 			Clear();
-			gs_game[g_ball.y][g_ball.x] = 'x';
+			gs_game[gs_ball.y][gs_ball.x] = gs_ball.character;
+			gs_game[gs_cos.y][gs_cos.x] = gs_cos.character;
 
 			PrintBox();
 			Sleep(3);
